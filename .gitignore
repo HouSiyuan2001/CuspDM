@@ -1,0 +1,13 @@
+cat <<EOF > .gitignore
+__pycache__/
+*.pyc
+*.npy
+*.npz
+*.fits
+output/
+results/
+.cache/
+.DS_Store
+.env
+EOF
+SavedResults
