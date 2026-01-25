@@ -14,31 +14,6 @@ and enables robust statistical comparisons with observed microlensing-free flux-
 
 ---
 
-## File structure
-
-- **pipeline/**
-  - Core scripts for generating mock cusp lenses, sampling source positions, and computing flux ratios.
-  - Includes forward modeling with subhalos and line-of-sight structures.
-
-- **models/**
-  - Implementations of different dark matter scenarios:
-    - CDM
-    - SIDM
-    - FDM
-  - Interfaces with [`pyHalo`](https://github.com/dangilman/pyHalo) and parametric macromodels.
-
-- **analysis/**
-  - KDE construction, per-$\phi$ normalization, and Bayesian model comparison.
-  - Scripts for producing $R_{\rm cusp}$–$\phi$ distributions and Bayes-factor tables.
-
-- **example/**
-  - Minimal notebooks demonstrating the full workflow:
-    - mock generation
-    - lensing calculation
-    - comparison with observed systems
-
----
-
 ## Requirements
 
 The code is written in **Python** and relies on standard scientific packages.
