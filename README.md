@@ -1,6 +1,6 @@
 # CuspDM: Flux-Ratio Anomalies in Cusp-Configured Strong Lenses
 
-[![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-green.svg)](https://arxiv.org/abs/XXXX.XXXXX)
+[![arXiv](https://img.shields.io/badge/arXiv-2601.16818-green.svg)](https://arxiv.org/abs/2601.16818)
 
 This repository provides a **forward-modeling and Bayesian inference framework** for studying **flux-ratio anomalies in cusp-configured strongly lensed quasars**.  
 It is designed to compare predictions from different dark matter scenarios, including **CDM, SIDM, and fuzzy dark matter (FDM)**, using large ensembles of mock lens realizations.
@@ -31,8 +31,7 @@ pip install jax jaxlib
 
 If you use this code or the accompanying simulations, please cite:
 
-Flux-ratio anomalies in cusp quasars reveal dark matter beyond CDM,
-arXiv:XXXX.XXXXX
+Flux-ratio anomalies in cusp quasars reveal dark matter beyond CDM, https://doi.org/10.48550/arXiv.2601.16818
 
 ## Acknowledgments
 
