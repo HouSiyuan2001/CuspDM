@@ -14,6 +14,12 @@ and enables robust statistical comparisons with observed microlensing-free flux-
 
 ---
 
+## Data availability
+
+The complete set of simulated data products is publicly available on Zenodo:
+
+**DOI:** https://doi.org/10.5281/zenodo.18368466
+
 ## Requirements
 
 The code is written in **Python** and relies on standard scientific packages.
