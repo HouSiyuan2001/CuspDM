@@ -16,9 +16,9 @@ and enables robust statistical comparisons with observed microlensing-free flux-
 
 ## Data availability
 
-The complete set of simulated data products is publicly available on Zenodo:
+The complete set of simulated data products is publicly available on Zenodo: **DOI:** https://doi.org/10.5281/zenodo.18368466
 
-**DOI:** https://doi.org/10.5281/zenodo.18368466
+The observational data used in this work, including compiled flux-ratio measurements for lensed cusp quasars, are publicly accessible at: [Notion](https://broken-yam-b18.notion.site/Lensed-Cusp-Quasar-2fffc9067a748018a1b0e1f13e404ae2)
 
 ## Requirements
 
