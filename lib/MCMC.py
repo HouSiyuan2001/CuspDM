@@ -1,4 +1,4 @@
-from fit_phi import *
+
 import os
 os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 import numpy as np
@@ -6,6 +6,9 @@ import jax.numpy as jnp
 from jax import vmap
 import numpy as np
 import jax
+import emcee
+import time
+from tqum import tqum
 
 def save_single_chain_result(sampler, save_path, walker_index=0):
     # Get chain for a specific walker, discarding burn-in steps
@@ -442,3 +445,56 @@ if __name__ == "__main__":
         
         print(f"⏱️ Simulation {i} duration: {elapsed_time/60:.2f} minutes")
         print(f"📊 Estimated remaining time: {hrs} hours {mins} minutes {secs} seconds")
+
+def log_posterior(theta, mu_global, xi1, xi2, yi1, yi2,
+                  obs_phi, obs_phi_sigma,
+                  obs_phi1, obs_phi1_sigma,
+                  obs_phi2, obs_phi2_sigma):
+    x, y = theta
+    try:
+        angles = simulate_and_extract_info(x, y, mu_global, xi1, xi2, yi1, yi2)
+        # 把 (phi, sigma) 成对打包排序
+        model_phi_pairs = sorted(zip([angles["phi1"], angles["phi2"]],
+                                    [obs_phi1_sigma, obs_phi2_sigma]),
+                                key=lambda p: p[0])  # 按 phi 值排序
+
+        obs_phi_pairs = sorted(zip([obs_phi1, obs_phi2],
+                                [obs_phi1_sigma, obs_phi2_sigma]),
+                            key=lambda p: p[0])
+
+        # 拆包排序后的值和 sigma
+        sorted_model_phis, sorted_model_sigmas = zip(*model_phi_pairs)
+        sorted_obs_phis, sorted_obs_sigmas = zip(*obs_phi_pairs)
+
+        chi2 = (
+            ((angles["phi"] - obs_phi) / obs_phi_sigma) ** 2 +
+            ((sorted_model_phis[0] - sorted_obs_phis[0]) / sorted_obs_sigmas[0]) ** 2
+        )
+        return -0.5 * chi2
+    except:
+        return -np.inf
+def run_mcmc(mu_global, xi1, xi2, yi1, yi2,
+             obs_phi, obs_phi_sigma,
+             obs_phi1, obs_phi1_sigma,
+             obs_phi2, obs_phi2_sigma,
+             x_center, y_center,
+             n_walkers=20, n_steps=1000, initial_radius=0.05):
+    
+    ndim = 2
+    p0 = np.array([x_center, y_center]) + initial_radius * np.random.randn(n_walkers, ndim)
+
+    sampler = emcee.EnsembleSampler(
+        n_walkers, ndim, log_posterior,
+        args=(mu_global, xi1, xi2, yi1, yi2,
+                obs_phi, obs_phi_sigma,
+                obs_phi1, obs_phi1_sigma,
+                obs_phi2, obs_phi2_sigma)
+    )
+    start = time.time()
+    print("Running MCMC...")
+    sampler.run_mcmc(p0, n_steps, progress=True)
+    end = time.time()
+    serial_time = end - start
+    print("Serial took {0:.1f} seconds".format(serial_time))
+
+    return sampler

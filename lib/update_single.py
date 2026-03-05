@@ -1,4 +1,4 @@
-import sys
+
 import os
 os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 import subprocess
@@ -17,7 +17,7 @@ from colossus.cosmology import cosmology
 from lenstronomy.Cosmo.nfw_param import NFWParam
 from astropy.cosmology import FlatwCDM,FlatLambdaCDM
 
-sys.path.append("../lib")
+
 from Sidm_tool import get_taub
 from Lensing_tool import *
 from notion import *
@@ -34,15 +34,13 @@ import numpy as np
 from FDM import CNFW_parametric_Multiplane, ULDM_parametric_Multiplane, GAUSSIAN_parametric_Multiplane,compute_delta_kappa_rms, compute_eps2_dtheta2,ULDM_r
 import gc
 
-from lenstronomy.LensModel.Profiles.cnfw import CNFW
-from lenstronomy.LensModel.Profiles.nfw import NFW
-from lenstronomy.LensModel.Profiles.uldm import Uldm
 from lenstronomy.LensModel.lens_model import LensModel
-from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
+
+from show_kappa import get_kappa
 
 import os
 import shutil
-from skimage import measure
+
 from MCMC import *
 import math
 
@@ -519,7 +517,19 @@ class HaloAnalyzer:
         np.savez(data_file, alpha1_global=alpha1_global, alpha2_global=alpha2_global)
         return alpha1_global, alpha2_global
     def Get_mainhalo_Mock(self):
-        from cal_mul_fits import to_elliptical_params,_shear_amp_pa_to_gamma
+
+        def to_elliptical_params(m, a_signed, dphi, phi0_abs,rescale_am):
+            a_m = abs(a_signed)*rescale_am
+            phi_m = phi0_abs + dphi
+            if a_signed < 0:
+                phi_m += np.pi / m
+            return a_m, phi_m
+        
+        def _shear_amp_pa_to_gamma(amp, pa_deg):
+            phi = np.deg2rad(pa_deg)
+            gamma1 = amp * np.cos(2.0 * phi)
+            gamma2 = amp * np.sin(2.0 * phi)
+            return float(gamma1), float(gamma2)
         obj = self.obj
         # print(obj)
 
@@ -674,8 +684,12 @@ class HaloAnalyzer:
         r_ein: characteristic angular scale (arcsec), e.g., Einstein radius used to evaluate Σ_host and sensitivity.
         """
         sigma_host_value = compute_sigma_host(r_ein, self.rs, self.rhos,self.arcsec_1)
-        kappa_host_value = sigma_host_value/self.sigma_crit
-        delta_kappa_rms = compute_delta_kappa_rms(kappa_host_value)
+        sigma_host_value_j = jnp.asarray(
+            sigma_host_value,
+            dtype=jnp.asarray(self.sigma_crit).dtype,
+        )
+        kappa_host_value = sigma_host_value_j / self.sigma_crit
+        delta_kappa_rms = compute_delta_kappa_rms(float(kappa_host_value))
         self.delta_theta = compute_eps2_dtheta2(delta_kappa_rms,self.thetaE)
         self.obj["delta_theta_FDM"] = self.delta_theta
         return self.delta_theta

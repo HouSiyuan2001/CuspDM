@@ -1,8 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Auto-detect compute backend (gpu/metal/cpu)
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPUTE_MODE="$(
+  ROOT="${ROOT}" python - <<'PY'
+import os
+import sys
+
+root = os.environ["ROOT"]
+sys.path.insert(0, os.path.join(root, "lib"))
+
+from utilize import has_apple_metal, has_nvidia_smi
+
+if has_nvidia_smi():
+    print("gpu")
+elif has_apple_metal():
+    print("metal")
+else:
+    print("cpu")
+PY
+)"
+echo "Compute mode: ${COMPUTE_MODE}"
+
 # -------- User configurable --------
-SCRIPT="Mock_sim2.py"
+SCRIPT="Mock_sim.py"
 FITS="Theory_Mock/cusp_all_observable.fits"
 COUNT=23
 NWIN=4                    # Number of screens (ideally ≤ available GPUs)
@@ -73,25 +95,27 @@ for ((i=0; i<NWIN; i++)); do
   start_idx=$(( i * COUNT + STARTIDX))
   sname="lc_${i}"
 
-  if (( ${#ASSIGNED[@]} > 0 )); then
-    EXCLUDED_STR=$(IFS=, ; echo "${ASSIGNED[*]}")
-  else
-    EXCLUDED_STR=""
-  fi
+  EXTRA_ARGS="--compute ${COMPUTE_MODE}"
+  if [[ "${COMPUTE_MODE}" == "gpu" ]]; then
+    if (( ${#ASSIGNED[@]} > 0 )); then
+      EXCLUDED_STR=$(IFS=, ; echo "${ASSIGNED[*]}")
+    else
+      EXCLUDED_STR=""
+    fi
 
-  chosen_gpu="$(EXCLUDED="${EXCLUDED_STR}" choose_gpu_excluding 2> >(sed "s/^/[GPU-PICK ${sname}] /" >&2))"
-  if [[ -z "${chosen_gpu}" ]]; then
-    chosen_gpu=$(( i % 4 ))
-    echo "[GPU-PICK ${sname}] Query failed, falling back to round-robin GPU: ${chosen_gpu}"
-  else
-    echo "[GPU-PICK ${sname}] Selected GPU: ${chosen_gpu}"
+    chosen_gpu="$(EXCLUDED="${EXCLUDED_STR}" choose_gpu_excluding 2> >(sed "s/^/[GPU-PICK ${sname}] /" >&2))"
+    if [[ -z "${chosen_gpu}" ]]; then
+      chosen_gpu=$(( i % 4 ))
+      echo "[GPU-PICK ${sname}] Query failed, falling back to round-robin GPU: ${chosen_gpu}"
+    else
+      echo "[GPU-PICK ${sname}] Selected GPU: ${chosen_gpu}"
+    fi
+    ASSIGNED+=("${chosen_gpu}")
+    EXTRA_ARGS="--compute gpu --gpu ${chosen_gpu}"
   fi
-  ASSIGNED+=("${chosen_gpu}")
 
   # Launch screen and periodically truncate logs (hourly)
   screen -dmLS "${sname}" bash -lc "
-    export CUDA_VISIBLE_DEVICES=${chosen_gpu}
-    export JAX_PLATFORM_NAME=gpu
     (
       while true; do
         sleep 3600
@@ -102,10 +126,15 @@ for ((i=0; i<NWIN; i++)); do
       --fits ${FITS} \
       --start-idx ${start_idx} \
       --count ${COUNT} \
-      --gpu ${chosen_gpu} \
+      --mode mcmc_each_phi \
+      ${EXTRA_ARGS} \
       |& tee -a ${LOGDIR}/${sname}.log
   "
-  echo "Launched screen ${sname} (start_idx=${start_idx}) on GPU ${chosen_gpu} → log: ${LOGDIR}/${sname}.log"
+  if [[ "${COMPUTE_MODE}" == "gpu" ]]; then
+    echo "Launched screen ${sname} (start_idx=${start_idx}) on GPU ${chosen_gpu} → log: ${LOGDIR}/${sname}.log"
+  else
+    echo "Launched screen ${sname} (start_idx=${start_idx}) on ${COMPUTE_MODE} → log: ${LOGDIR}/${sname}.log"
+  fi
 done
 
 echo "All ${NWIN} screens launched. Use: screen -ls / screen -r lc_0"

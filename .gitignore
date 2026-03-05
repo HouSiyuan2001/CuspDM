@@ -11,3 +11,8 @@ results/
 .env
 EOF
 SavedResults
+
+Data
+Run_Full_Simulation/Data
+logs
+demo/Theory_Mock

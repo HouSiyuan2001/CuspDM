@@ -25,7 +25,6 @@ from astropy.table import Table
 from astropy import units as u 
 import astropy.constants as const 
 from astropy.cosmology import FlatwCDM,FlatLambdaCDM
-
 vc = const.c.to(u.km/u.s).value 
 G =  const.G.to(u.Mpc/u.solMass *(u.km/u.second)*(u.km/u.second)).value 
 apr =  1.0/np.pi*180.0*3600  # arcsec per rad
@@ -40,6 +39,12 @@ w0 = -1.0  # Equation of state parameter for dark energy
 
 cosmo = FlatwCDM(H0=H0, Om0=Omega_m, Ob0=Omega_b, w0=w0)
 # cosmo=FlatLambdaCDM(H0=72,Om0=0.26,Tcmb0=2.725)
+_JAX_PLATFORM = os.environ.get("JAX_PLATFORM_NAME", "").lower()
+_USE_F32 = _JAX_PLATFORM == "metal" or "metal" in jax.default_backend().lower()
+_DTYPE = jnp.float32 if _USE_F32 else jnp.float64
+_COSMO_H = jnp.asarray(cosmo.h, dtype=_DTYPE)
+
+
 
 
 # Virial overdensity
@@ -62,7 +67,12 @@ def SigmaCrit(z1, z2):
     '''
         Critical surface density for the case of lens plane at z1 and source plane at z2.
     '''
-    res = (vc * vc / 4.0 / jnp.pi / G * Dc(z2) / (Dc(z1) / (1.0 + z1)) / Dc2(z1, z2))
+    z1 = jnp.asarray(z1, dtype=_DTYPE)
+    z2 = jnp.asarray(z2, dtype=_DTYPE)
+    vc_j = jnp.asarray(vc, dtype=_DTYPE)
+    G_j = jnp.asarray(G, dtype=_DTYPE)
+    res = (vc_j * vc_j / jnp.asarray(4.0, dtype=_DTYPE) / jnp.asarray(jnp.pi, dtype=_DTYPE)
+           / G_j * Dc(z2) / (Dc(z1) / (jnp.asarray(1.0, dtype=_DTYPE) + z1)) / Dc2(z1, z2))
     return res
 
 def rho_crit(z, densType="crit"): 
@@ -101,12 +111,18 @@ def Da20(z1, z2):
 # Function to calculate comoving distance using JAX and trapezoid integration
 @jit
 def E_func(z):
-    return jnp.sqrt(Omega_m * (1 + z)**3 + Omega_k * (1 + z)**2 + Omega_Lambda)
+    z = jnp.asarray(z, dtype=_DTYPE)
+    return jnp.sqrt(
+        jnp.asarray(Omega_m, dtype=_DTYPE) * (jnp.asarray(1.0, dtype=_DTYPE) + z) ** 3
+        + jnp.asarray(Omega_k, dtype=_DTYPE) * (jnp.asarray(1.0, dtype=_DTYPE) + z) ** 2
+        + jnp.asarray(Omega_Lambda, dtype=_DTYPE)
+    )
 
 @jit
 def Dc(z):
     # Create an array of redshift values to integrate over
-    z_values = jnp.linspace(0.0, z, 1000000)  # Create a fine grid of z values for integration
+    z = jnp.asarray(z, dtype=_DTYPE)
+    z_values = jnp.linspace(jnp.asarray(0.0, dtype=_DTYPE), z, 1000000, dtype=_DTYPE)
     
     # Calculate E(z) values for each z
     E_values = E_func(z_values)
@@ -115,28 +131,33 @@ def Dc(z):
     integral = trapezoid(1.0 / E_values, z_values)
     
     # Calculate the comoving distance
-    distance = (vc / H0) * integral  # Return the comoving distance in Mpc
-    return distance*cosmo.h #Mpc/h
+    distance = (jnp.asarray(vc, dtype=_DTYPE) / jnp.asarray(H0, dtype=_DTYPE)) * integral
+    return distance * _COSMO_H #Mpc/h
 @jit
 def Dc2(z1,z2):
+    z1 = jnp.asarray(z1, dtype=_DTYPE)
+    z2 = jnp.asarray(z2, dtype=_DTYPE)
     Dcz1 = Dc(z1)
     Dcz2 = Dc(z2)
-    res = Dcz2-Dcz1+1e-8
+    res = Dcz2 - Dcz1 + jnp.asarray(1e-8, dtype=_DTYPE)
     return res
 # Function to calculate angular diameter distance from comoving distance
 @jit
 def Da(z):
     # Calculate the comoving distance first
+    z = jnp.asarray(z, dtype=_DTYPE)
     D_C = Dc(z)
     
     # Apply the formula D_A(z) = D_C(z) / (1+z)
-    D_A = D_C / (1 + z)
+    D_A = D_C / (jnp.asarray(1.0, dtype=_DTYPE) + z)
     
     return D_A #Mpc/h
 # Function to calculate angular diameter distance between two redshifts
 @jit
 def Da2(z1, z2):
     # Calculate the comoving distance first
+    z1 = jnp.asarray(z1, dtype=_DTYPE)
+    z2 = jnp.asarray(z2, dtype=_DTYPE)
     D_C = Dc(z2) - Dc(z1)
     
     # Apply the formula D_A(z1, z2) = D_C(z1, z2) / (1+z2)
@@ -167,20 +188,29 @@ def SigmaCrit0(z1, z2):
     return res
 
 def alphas_to_mu(alpha1_in, alpha2_in, dsx_arc, xi1, xi2, external_kappa=None):
+    alpha1_in = jnp.asarray(alpha1_in, dtype=_DTYPE)
+    alpha2_in = jnp.asarray(alpha2_in, dtype=_DTYPE)
+    dsx_arc = jnp.asarray(dsx_arc, dtype=_DTYPE)
+    xi1 = jnp.asarray(xi1, dtype=_DTYPE)
+    xi2 = jnp.asarray(xi2, dtype=_DTYPE)
+    if external_kappa is not None:
+        external_kappa = jnp.asarray(external_kappa, dtype=_DTYPE)
+
     al11_tmp, al12_tmp = jnp.gradient(alpha1_in, dsx_arc)
     al21_tmp, al22_tmp = jnp.gradient(alpha2_in, dsx_arc)
 
+    half = jnp.asarray(0.5, dtype=_DTYPE)
     if external_kappa is not None:
-        kappa = 0.5*(al11_tmp + al22_tmp)+external_kappa
+        kappa = half * (al11_tmp + al22_tmp) + external_kappa
     else:
-        kappa = 0.5*(al11_tmp + al22_tmp)
-    gamma1 = 0.5*(al22_tmp - al11_tmp)
+        kappa = half * (al11_tmp + al22_tmp)
+    gamma1 = half * (al22_tmp - al11_tmp)
     gamma2 = al12_tmp
-    gamma_sq = gamma1**2.0 + gamma2**2.0 
+    gamma_sq = jnp.square(gamma1) + jnp.square(gamma2)
     # mu_out = 1.0/(1.0 - (al11_tmp + al22_tmp) + al11_tmp*al22_tmp - al12_tmp*al21_tmp)
-    mu_out = 1.0/((1.0 - kappa)**2 - gamma_sq)
-    y1_out = xi1-alpha1_in
-    y2_out = xi2-alpha2_in
+    mu_out = jnp.asarray(1.0, dtype=_DTYPE)/((jnp.asarray(1.0, dtype=_DTYPE) - kappa)**2 - gamma_sq)
+    y1_out = xi1 - alpha1_in
+    y2_out = xi2 - alpha2_in
     return y1_out, y2_out, mu_out, kappa, gamma1, gamma2
 
 def timedelay(potential, alpha1, alpha2, zlens, zsource, angle_unit='arcsec'):

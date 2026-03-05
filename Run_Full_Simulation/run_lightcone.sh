@@ -1,9 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Auto-detect compute backend (gpu/metal/cpu)
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPUTE_MODE="$(
+  ROOT="${ROOT}" python - <<'PY'
+import os
+import sys
+
+root = os.environ["ROOT"]
+sys.path.insert(0, os.path.join(root, "lib"))
+
+from utilize import has_apple_metal, has_nvidia_smi
+
+if has_nvidia_smi():
+    print("gpu")
+elif has_apple_metal():
+    print("metal")
+else:
+    print("cpu")
+PY
+)"
+echo "Compute mode: ${COMPUTE_MODE}"
+
 # -------- User configurable --------
-SCRIPT="Mock_sim2.py"
-FITS="Theory_Mock/cusp_all_observable.fits"
+SCRIPT="Mock_sim.py"
+FITS="Data/cusp_all_observable.fits"
 COUNT=1
 NWIN=2                                # Prefer ≤ GPU count
 LOGROOT="logs"                        # Shared log root
@@ -84,23 +106,27 @@ for ((i=0; i<NWIN; i++)); do
   sname="lc_${i}"
   logfile="${LOGDIR}/${sname}.log"
 
-  # Pass assigned list to Python to pick different GPUs when possible
-  if (( ${#ASSIGNED[@]} > 0 )); then
-    EXCLUDED_STR=$(IFS=, ; echo "${ASSIGNED[*]}")
-  else
-    EXCLUDED_STR=""
-  fi
+  EXTRA_ARGS="--compute ${COMPUTE_MODE}"
+  if [[ "${COMPUTE_MODE}" == "gpu" ]]; then
+    # Pass assigned list to Python to pick different GPUs when possible
+    if (( ${#ASSIGNED[@]} > 0 )); then
+      EXCLUDED_STR=$(IFS=, ; echo "${ASSIGNED[*]}")
+    else
+      EXCLUDED_STR=""
+    fi
 
-  # Pick GPU
-  chosen_gpu="$(EXCLUDED="${EXCLUDED_STR}" choose_gpu_excluding 2> >(sed "s/^/[GPU-PICK ${sname}] /" >&2))"
-  if [[ -z "${chosen_gpu}" ]]; then
-    # Fall back to round-robin when query fails
-    chosen_gpu=$(( i % NGPU_FALLBACK ))
-    echo "[GPU-PICK ${sname}] Query failed, using round-robin GPU: ${chosen_gpu}"
-  else
-    echo "[GPU-PICK ${sname}] Selected GPU: ${chosen_gpu}"
+    # Pick GPU
+    chosen_gpu="$(EXCLUDED="${EXCLUDED_STR}" choose_gpu_excluding 2> >(sed "s/^/[GPU-PICK ${sname}] /" >&2))"
+    if [[ -z "${chosen_gpu}" ]]; then
+      # Fall back to round-robin when query fails
+      chosen_gpu=$(( i % NGPU_FALLBACK ))
+      echo "[GPU-PICK ${sname}] Query failed, using round-robin GPU: ${chosen_gpu}"
+    else
+      echo "[GPU-PICK ${sname}] Selected GPU: ${chosen_gpu}"
+    fi
+    ASSIGNED+=("${chosen_gpu}")
+    EXTRA_ARGS="--compute gpu --gpu ${chosen_gpu}"
   fi
-  ASSIGNED+=("${chosen_gpu}")
 
   # Launch screen with a lightweight log truncation loop
   screen -dmLS "${sname}" bash -lc "
@@ -116,19 +142,22 @@ for ((i=0; i<NWIN; i++)); do
       done
     ) &
 
-    export CUDA_VISIBLE_DEVICES='${chosen_gpu}'
-    export JAX_PLATFORM_NAME='gpu'
     # Optional: source ~/.bashrc && conda activate your_env || true
 
     python '${SCRIPT}' \
       --fits '${FITS}' \
       --start-idx '${start_idx}' \
       --count '${COUNT}' \
-      --gpu '${chosen_gpu}' \
+      --mode lightcone \
+      ${EXTRA_ARGS} \
       |& tee -a '${logfile}'
   "
 
-  echo "Launched screen ${sname} (start_idx=${start_idx}) on GPU ${chosen_gpu} → log: ${logfile}"
+  if [[ "${COMPUTE_MODE}" == "gpu" ]]; then
+    echo "Launched screen ${sname} (start_idx=${start_idx}) on GPU ${chosen_gpu} → log: ${logfile}"
+  else
+    echo "Launched screen ${sname} (start_idx=${start_idx}) on ${COMPUTE_MODE} → log: ${logfile}"
+  fi
 done
 
 echo "All ${NWIN} screens launched. Use: screen -ls  /  screen -r lc_0"

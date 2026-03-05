@@ -1,5 +1,5 @@
-import sys
-sys.path.append("../lib")
+
+
 from notion import get_Mock_lens_system_params_mul
 from astropy.io import fits
 from tqdm import tqdm
@@ -436,43 +436,3 @@ def Simulate_Mock_data_mcmc_each_phibin(
             print(f"⏱️ idx {idx} | run {run_id} MCMC duration: {elapsed:.2f} hours")
             print(f"📊 Total elapsed runtime: {total_time:.2f} hours")
             print(f"📅 Estimated remaining runtime: {eta_hours:.2f} hours")
-
-if __name__ == "__main__":
-    import argparse
-    import os
-    from cal_mul_fits import find_free_gpu
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--fits", type=str, default="Theory_Mock/cusp_all_observable_multipole.fits")
-    parser.add_argument("--start-idx", type=int, required=True)
-    parser.add_argument("--count", type=int, default=62)
-    parser.add_argument("--gpu", type=str, default=None)  # Optional: explicitly select GPU
-    args = parser.parse_args()
-
-    # Prefer explicit --gpu, otherwise choose via find_free_gpu()
-    gpu = args.gpu if args.gpu is not None else find_free_gpu()
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-    os.environ["JAX_PLATFORM_NAME"] = "gpu"
-    print(f"⚙️ Using GPU for JAX: {gpu}")
-
-    # Simulate_Mock_data_light_cone(
-    #     args.fits,
-    #     start_idx=args.start_idx,
-    #     count=args.count
-    # )
-
-    # Simulate_Mock_data_light_cone("Theory_Mock/cusp_all_observable_multipole.fits", start_idx=246, count=5)
-
-    
-    # Iterate over mock phi bins
-    Simulate_Mock_data_mcmc_each_phibin(
-       args.fits,
-       start_idx=args.start_idx,
-       count=args.count
-    )
-
-    # Simulate_Mock_data_mcmc_each_phibin(
-    #     "Theory_Mock/cusp_high_observable.fits",
-    #     start_idx=240,
-    #     count=30
-    # )

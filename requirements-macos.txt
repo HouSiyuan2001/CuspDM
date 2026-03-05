@@ -1,0 +1,19 @@
+# Tested on macOS 14 (Apple M2 CPU)
+# For GPU/Metal acceleration, follow JAX official install instructions if needed.
+
+numpy==1.24.4
+scipy==1.13.1
+astropy==5.3
+matplotlib==3.8.4
+tqdm==4.66.6
+jax==0.4.35
+jaxlib==0.4.35
+lenstronomy==1.13.1
+pyhalo==1.4.0
+
+# Optional/auxiliary deps used in parts of the codebase
+colossus
+numba
+scikit-learn
+notion-client
+jupyter
