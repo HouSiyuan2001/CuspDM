@@ -26,7 +26,7 @@ and enables robust statistical comparisons with microlensing-free flux-ratio mea
 The complete simulated data products are publicly available on Zenodo:
 
 DOI:
-https://doi.org/10.5281/zenodo.18368466
+https://zenodo.org/records/18979291
 
 This dataset contains simulated data used for the statistical analysis of
 flux-ratio anomalies in cusp-configured strongly lensed quasars. The data
@@ -215,7 +215,7 @@ This produces the final Rcusp-phi data file for each dark matter model:
 merged_by_axis_type.pkl
 
 For Bayesian analysis, use the completed simulation sample. Download the full sample data
-from https://doi.org/10.5281/zenodo.18368466, place merged_by_axis_type.pkl and
+from https://zenodo.org/records/18979291, place merged_by_axis_type.pkl and
 merged_by_axis_type_mul.pkl into Data, then go to Paper_image/Bey.ipynb for analysis.
 This notebook reproduces the Bayesian results in https://arxiv.org/abs/2601.16818.
 
@@ -269,7 +269,7 @@ then follow the simulation workflow above.
 Example notebooks to reproduce all figures from https://arxiv.org/abs/2601.16818
 are provided in the Paper_image folder.
 
-To use them, download all files from https://doi.org/10.5281/zenodo.18368466
+To use them, download all files from https://zenodo.org/records/18979291
 and place them in Data.
 
 For full reproducibility of the dataset, run the complete simulation workflow.

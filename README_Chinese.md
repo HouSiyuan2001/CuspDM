@@ -24,7 +24,7 @@
 完整的模拟数据产品已公开发布在 Zenodo：
 
 DOI:
-https://doi.org/10.5281/zenodo.18368466
+https://zenodo.org/records/18979291
 
 该数据集包含用于尖点构型强透镜类星体 flux-ratio 异常统计分析的模拟数据。
 数据刻画不同暗物质模型下 Rcusp 统计量随开角 phi 的变化，并作为
@@ -211,7 +211,7 @@ python demo/Organizing_Rcusp_phi.py
 
 最后生产出各个暗物质模型的最终Rcusp-phi数据文件merged_by_axis_type.pkl
 
-后续贝叶斯分析使用已经完成的模拟示例, 下载Full Sample的模拟数据 https://doi.org/10.5281/zenodo.18368466 , 将得到的merged_by_axis_type.pkl和merged_by_axis_type_mul.pkl放入Data, 之后移步到Paper_image文件夹中的Bey.ipynb进行分析, 该notebook绘制了https://arxiv.org/abs/2601.16818 中贝叶斯分析的结果
+后续贝叶斯分析使用已经完成的模拟示例, 下载Full Sample的模拟数据 https://zenodo.org/records/18979291 , 将得到的merged_by_axis_type.pkl和merged_by_axis_type_mul.pkl放入Data, 之后移步到Paper_image文件夹中的Bey.ipynb进行分析, 该notebook绘制了https://arxiv.org/abs/2601.16818 中贝叶斯分析的结果
 
 ⸻
 
@@ -264,7 +264,7 @@ bash Run_Full_Simulation/run_MCMC_each_phi.sh
 # 可重复性说明
 
 提供了示例 notebook绘制 https://arxiv.org/abs/2601.16818 中的所有图像：位于Paper_image文件夹中
-使用时需从 https://doi.org/10.5281/zenodo.18368466 下载所有文件并放置于Data
+使用时需从 https://zenodo.org/records/18979291 下载所有文件并放置于Data
 
 
 如果需要完全复现数据, 需要运行完整模拟流程。
