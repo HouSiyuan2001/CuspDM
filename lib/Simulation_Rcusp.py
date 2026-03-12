@@ -389,7 +389,7 @@ def Simulate_Mock_data_mcmc_each_phibin(
                     for phi_center in phi_bins:
                         phi_center_i32 = np.int32(phi_center)
                         situation = analyzer.Simulation_MCMC_Mock_each_phibin(
-                            sim_type, int(phi_center_i32), int(delta_phi)
+                            sim_type, int(phi_center_i32), int(delta_phi), force_run=force_run
                         )
                         # Optionally wait for device to finish to avoid buffer accumulation
                         if block_until_ready and hasattr(situation, "block_until_ready"):

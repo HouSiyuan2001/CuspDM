@@ -8,7 +8,9 @@ import numpy as np
 import jax
 import emcee
 import time
-from tqum import tqum
+from tqdm import tqdm
+from Lensing_tool import *
+from Rcusp_tool import *
 
 def save_single_chain_result(sampler, save_path, walker_index=0):
     # Get chain for a specific walker, discarding burn-in steps
@@ -286,13 +288,16 @@ def get_xroots_and_mu_info(filtered_samples, chi2_values, xi1, xi2, yi1, yi2, mu
             continue
 
         mu_info = get_mu_of_three_points(xroots, mu_global, xi1, xi2)
+        
         xroots_list.append(xroots)
         mu_info_list.append(mu_info)
         Rcusp_info = Get_Rcusp_and_phi(mu_info)
+
         edge_points = np.array([p["position"] for p in Rcusp_info["edge_points"]])
         negative_point = Rcusp_info["negative_point"]
         center_point = np.array(Rcusp_info["center_point"]["position"])
         non_cusp_point = np.array(Rcusp_info["non_cusp_point"]["position"])
+
         angles = compute_theoretical_angles(edge_points, negative_point, center_point) # angle relative to lens center
 
         dist_negative = np.linalg.norm(negative_point - center_point)
@@ -445,7 +450,22 @@ if __name__ == "__main__":
         
         print(f"⏱️ Simulation {i} duration: {elapsed_time/60:.2f} minutes")
         print(f"📊 Estimated remaining time: {hrs} hours {mins} minutes {secs} seconds")
+        
+def simulate_and_extract_info(x, y, mu_global, xi1, xi2, yi1, yi2):
+    ys = np.array([y, x])  # 注意坐标顺序
+    xroots_all, mask = mapping_triangles_vec_jax(ys, xi1, xi2, yi1, yi2)
+    xroots = xroots_all[mask]
+    if len(xroots) != 5:
+        raise ValueError("Invalid number of images.")
 
+    mu_info = get_mu_of_three_points(xroots, mu_global, xi1, xi2)
+    Rcusp_info = Get_Rcusp_and_phi(mu_info)
+    edge_points = np.array([p["position"] for p in Rcusp_info["edge_points"]])
+    negative_point = Rcusp_info["negative_point"]
+    center_point = np.array(Rcusp_info["center_point"]["position"])
+    angles = compute_theoretical_angles(edge_points, negative_point, center_point)
+
+    return angles
 def log_posterior(theta, mu_global, xi1, xi2, yi1, yi2,
                   obs_phi, obs_phi_sigma,
                   obs_phi1, obs_phi1_sigma,
@@ -453,22 +473,19 @@ def log_posterior(theta, mu_global, xi1, xi2, yi1, yi2,
     x, y = theta
     try:
         angles = simulate_and_extract_info(x, y, mu_global, xi1, xi2, yi1, yi2)
-        # 把 (phi, sigma) 成对打包排序
-        model_phi_pairs = sorted(zip([angles["phi1"], angles["phi2"]],
-                                    [obs_phi1_sigma, obs_phi2_sigma]),
-                                key=lambda p: p[0])  # 按 phi 值排序
-
-        obs_phi_pairs = sorted(zip([obs_phi1, obs_phi2],
-                                [obs_phi1_sigma, obs_phi2_sigma]),
-                            key=lambda p: p[0])
-
-        # 拆包排序后的值和 sigma
-        sorted_model_phis, sorted_model_sigmas = zip(*model_phi_pairs)
-        sorted_obs_phis, sorted_obs_sigmas = zip(*obs_phi_pairs)
-
+        phi = angles["phi"]
+        phi1 = angles["phi1"]
+        phi2 = angles["phi2"]
+        model_phi_min = phi1 if phi1 <= phi2 else phi2
+        if obs_phi1 <= obs_phi2:
+            obs_phi_min = obs_phi1
+            obs_sigma_min = obs_phi1_sigma
+        else:
+            obs_phi_min = obs_phi2
+            obs_sigma_min = obs_phi2_sigma
         chi2 = (
-            ((angles["phi"] - obs_phi) / obs_phi_sigma) ** 2 +
-            ((sorted_model_phis[0] - sorted_obs_phis[0]) / sorted_obs_sigmas[0]) ** 2
+            ((phi - obs_phi) / obs_phi_sigma) ** 2 +
+            ((model_phi_min - obs_phi_min) / obs_sigma_min) ** 2
         )
         return -0.5 * chi2
     except:

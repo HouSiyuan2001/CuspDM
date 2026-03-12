@@ -42,50 +42,69 @@ def compute_theoretical_angles(edge_points, negative_point, center_point):
         "phi2": phi2
     }
 def Get_Rcusp_and_phi(mu_info):
+    '''	
+        Input is a list. Each element is a dict.
+        mu_info = [
+        {
+            "position": [x, y],                 # Physical coordinates of the sample point (floats, length-2 list)
+            "mu" or "magnification": mu_value   # Magnification at that position (float)
+        },
+        ...
+    ]
+        This function computes Rcusp using the three points with the largest magnifications.
     '''
-    This version skips point classification and uses the three highest magnifications.
-    '''
-    abs_mu_with_info = [(abs(info["mu"]), info) for info in mu_info]
+    # Collect absolute magnifications and their info, supporting "mu" or "magnification".
+    abs_mu_with_info = []
+    for info in mu_info:
+        if "mu" in info:
+            mu_val = info["mu"]
+        elif "magnification" in info:
+            mu_val = info["magnification"]
+        else:
+            raise ValueError("Each entry must include 'mu' or 'magnification'")
+        abs_mu_with_info.append((abs(mu_val), {**info, "mu": mu_val}))
 
     # Sort by absolute value (ascending).
     abs_mu_with_info_sorted = sorted(abs_mu_with_info, key=lambda x: x[0])
     
-    # Take the largest three and largest four.
+    # Take the largest three and the largest four.
     top3_infos = [entry[1] for entry in abs_mu_with_info_sorted[-3:]]
     top4_infos = [entry[1] for entry in abs_mu_with_info_sorted[-4:]]
 
-    # Collect positions for cluster-style selection.
+    # Use positions to identify the central (negative) point.
     positions4 = np.array([info["position"] for info in top4_infos])
     positions3 = np.array([info["position"] for info in top3_infos])
     center_idx = np.argmin([
-    np.sum(np.linalg.norm(positions3[i] - np.delete(positions3, i, axis=0), axis=1))
-    for i in range(3)
+        np.sum(np.linalg.norm(positions3[i] - np.delete(positions3, i, axis=0), axis=1))
+        for i in range(3)
     ])
     cusp_negative_point = positions3[center_idx]
    
     mu_list = [abs(info["mu"]) for info in top3_infos]
     mu_signed = mu_list.copy()
-
     mu_signed[center_idx] *= -1
 
     # Rcusp calculation.
     mu1, mu2, mu3 = mu_signed
     R_cusp = jnp.abs(mu1 + mu2 + mu3) / (jnp.abs(mu1) + jnp.abs(mu2) + jnp.abs(mu3))
 
-    # Resolve edge and center information.
+    # Collect edge and center info.
     if center_idx is not None:
         edge_points = [info for i, info in enumerate(top3_infos) if i != center_idx]
     else:
-        edge_points = top3_infos  # fallback case
+        edge_points = top3_infos  # Fallback case.
 
     center_point = abs_mu_with_info_sorted[0][1]
+    # Get non_cusp_point.
+    non_cusp_point = [info for info in top4_infos if info not in top3_infos][0]
 
     return {
         "mu_info": top3_infos,
         "R_cusp": R_cusp,
         "edge_points": edge_points,
-        "negative_point": cusp_negative_point,  
-        "center_point": center_point
+        "negative_point": cusp_negative_point,
+        "center_point": center_point,
+        "non_cusp_point": non_cusp_point
     }
 
 

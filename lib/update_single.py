@@ -1361,7 +1361,7 @@ class HaloAnalyzer:
             )
 
         return "Finish!"
-    def Simulation_MCMC_Mock_each_phibin(self, sim_type, phi_center, delta_phi = 5):
+    def Simulation_MCMC_Mock_each_phibin(self, sim_type, phi_center, delta_phi = 5, force_run=False):
         xi2, xi1 = make_c_coor(self.bsz_arc, self.nnn)
         y_opt = np.array([0, 0])
         if sim_type == 'None':
@@ -1391,11 +1391,11 @@ class HaloAnalyzer:
 
         save_path_combined = f"{save_path_mcmc}/{self.name}_{sim_type}_{phi_center}_chain_combined.npz"
         save_path_rcusp = f"{save_path_mcmc}/{self.name}_{sim_type}_{phi_center}_Rcusp_phi.npz"
-        if os.path.exists(save_path_rcusp):
+        if os.path.exists(save_path_rcusp) and not force_run:
             print(f"✔️ File already exists, skipping: {save_path_rcusp}")
             return
 
-        if not os.path.exists(save_path_combined):
+        if force_run or not os.path.exists(save_path_combined):
             sampler = run_mcmc(
                 mu_global, xi1, xi2, yi1, yi2,
                 obs_phi=phi_center, obs_phi_sigma=delta_phi,

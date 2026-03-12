@@ -135,6 +135,7 @@ def main() -> None:
                 savefile=args.savefile,
                 start_idx=idx,
                 count=1,
+                force_run=True,
             )
         if args.mode in ("mcmc_each_phi", "both"):
             Simulate_Mock_data_mcmc_each_phibin(
@@ -142,6 +143,7 @@ def main() -> None:
                 savefile=args.savefile,
                 start_idx=idx,
                 count=1,
+                force_run=True,
             )
 
 

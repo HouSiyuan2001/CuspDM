@@ -170,84 +170,73 @@ lightcone运行时间(Apple M2 CPU):
 
 ### 单独测试 MCMC 撒点
 
-python demo/run_two_mock_systems.py --mode mcmc_each_phi --indices 69 --compute cpu
+```
+python demo/run_two_mock_systems.py --mode mcmc_each_phi --indices xx --compute cpu
+```
+
+注意此处运行时间较长, 一个phibin 需要10min+,测试设备Apple M2 CPU
 
 
 
 ## 5. 贝叶斯分析
 
+合并最终结果 
 
+```
+python demo/Organizing_Rcusp_phi.py
+```
+
+最后生产出各个暗物质模型的最终Rcusp-phi数据文件merged_by_axis_type.pkl
+
+后续贝叶斯分析使用已经完成的模拟示例, 下载Full Sample的模拟数据 https://doi.org/10.5281/zenodo.18368466 , 将得到的merged_by_axis_type.pkl和merged_by_axis_type_mul.pkl放入Data, 之后移步到Paper_image文件夹中的Bey.ipynb进行分析, 该notebook绘制了https://arxiv.org/abs/2601.16818 中贝叶斯分析的结果
 
 ⸻
 
 # Full Sample模拟流程
 
-## 1. 下载SIE+External shear Mockdata
-
-- 过程同demo
-
-⸻
-
-## 2 生成多极矩 mock catalog
-
-python Run_Full_Simulation/generate_multipule_mock_catalog.py
-
-
-⸻
-
-3 Light-cone 模拟
-
-bash Run_Full_Simulation/run_lightcone.sh
-
-
-⸻
-
-4 每个 phi bin 进行 MCMC
-
-bash Run_Full_Simulation/run_MCMC_each_phi.sh
-
-
-⸻
+完整模拟将耗费大量时间和计算资源，建议在具有 NVIDIA GPU（CUDA）的 Linux 系统上运行。
 
 完整模拟运行时间
 
 典型运行时间：
-	•	Light-cone 生成（4×A100 GPU）：
-约 2 天
-	•	MCMC 统计 Rcusp–phi 分布：
-约 3 周
-
-⸻
-
-在用户数据上的使用方法
-
-1 准备透镜 catalog
-
-准备一个与
-
-Data/cusp_all_observable.fits
-
-结构类似的 FITS catalog。
-
-⸻
-
-2 运行模拟 pipeline
-
-python Run_Simulation/Mock_sim.py \
-  --fits /path/to/your_catalog.fits \
-  --start-idx 0 \
-  --count 100 \
-  --mode lightcone
+- Light-cone 生成（4×A100 GPU）：约 2 天
+- MCMC 统计 Rcusp–phi 分布：约 3 周
 
 
-⸻
 
-3 对 phi bins 进行 MCMC
+## 1. 下载SIE+External shear Mockdata
 
---mode mcmc_each_phi
+- 过程同demo
+
+---
+
+## 2 生成多极矩 mock catalog
+
+```
+python Run_Full_Simulation/generate_multipule_mock_catalog.py
+```
+
+---
+
+## 3 Light-cone 模拟
+
+```
+bash Run_Full_Simulation/run_lightcone.sh
+```
+
+---
+
+## 4 每个 phi bin 进行 MCMC
+
+```
+bash Run_Full_Simulation/run_MCMC_each_phi.sh
+```
 
 
-⸻
+## 在用户数据上的使用方法
+
+准备一个与Data/cusp_all_observable.fits 结构类似的 FITS catalog。之后按照上述模拟流程进行即可
+
 
 # 可重复性说明
 

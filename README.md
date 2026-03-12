@@ -24,21 +24,30 @@ and enables robust statistical comparisons with microlensing-free flux-ratio mea
 # Data availability
 
 The complete simulated data products are publicly available on Zenodo:
+
+DOI:
 https://doi.org/10.5281/zenodo.18368466
 
 The observational data used in this work (compiled cusp-quasar flux ratios) are available at:
+
+Notion database:
 https://broken-yam-b18.notion.site/Lensed-Cusp-Quasar-2fffc9067a748018a1b0e1f13e404ae2
 
 ---
 
 # System requirements
 
-- Operating systems: any
-- Tested on:
-  - macOS (Apple M2 CPU)
-  - Linux + NVIDIA A100 GPU (CUDA 11)
-- Python: 3.10+
-- Hardware (optional): NVIDIA GPU (CUDA) for large-scale runs
+Operating systems: any
+
+Tested on:
+- macOS (Apple M2 CPU)
+- Linux + NVIDIA A100 GPU (CUDA 11)
+
+Python:
+Python 3.10+
+
+Hardware (optional):
+NVIDIA GPU (CUDA) for large-scale runs
 
 ---
 
@@ -68,9 +77,9 @@ pip install -r requirements-macos.txt
 
 See the Method section of https://arxiv.org/abs/2601.16818 for details.
 
----
-
 # Demo (small dataset)
+
+A small-scale example is included.
 
 ## 1. Download SIE + external shear mock data
 
@@ -109,6 +118,8 @@ python lib/merge_calc_results_to_fits.py \
 ```
 
 Outputs:
+
+After completion, you will get:
 - demo/Data/Data_json/ (intermediate JSON files)
 - demo/Data/lensed_qso_mock_multipole.fits
 
@@ -121,12 +132,13 @@ python lib/select_cusp_lens_systems.py \
 ```
 
 Note: the demo sample is too small to yield cusp systems, so the result is empty.
-For non-empty outputs, use the full simulation. The files
-Data/cusp_all_observable_multipole.fits and Data/cusp_all_observable.fits can be
-downloaded, and inspected via demo/inspect_catalog_structure.ipynb.
+For non-empty outputs, use the full simulation. For subsequent calculations, download:
+Data/cusp_all_observable_multipole.fits and Data/cusp_all_observable.fits, and inspect
+via demo/inspect_catalog_structure.ipynb.
 
 Output:
-- demo/Data/cusp_all_observable_multipole.fits
+Merged lens catalog:
+- demo/Data/cusp_all_observable_multipole.fits (selected cusp systems)
 
 ## 4. Dark-matter lightcone generation and MCMC sampling
 
@@ -156,20 +168,42 @@ Runtime depends on subhalo counts and hardware.
 ### MCMC-only test
 
 ```sh
-python demo/run_two_mock_systems.py --mode mcmc_each_phi --indices 69 --compute cpu
+python demo/run_two_mock_systems.py --mode mcmc_each_phi --indices xx --compute cpu
 ```
+
+Note: runtime is long. One phi bin takes 10+ minutes on Apple M2 CPU.
 
 ## 5. Bayesian analysis
 
-See the paper for the statistical analysis workflow.
+Merge the final results:
+
+```sh
+python demo/Organizing_Rcusp_phi.py
+```
+
+This produces the final Rcusp-phi data file for each dark matter model:
+merged_by_axis_type.pkl
+
+For Bayesian analysis, use the completed simulation sample. Download the full sample data
+from https://doi.org/10.5281/zenodo.18368466, place merged_by_axis_type.pkl and
+merged_by_axis_type_mul.pkl into Data, then go to Paper_image/Bey.ipynb for analysis.
+This notebook reproduces the Bayesian results in https://arxiv.org/abs/2601.16818.
 
 ---
 
 # Full sample simulation workflow
 
+Full simulations are computationally heavy and are recommended on Linux with NVIDIA GPU (CUDA).
+
+Expected runtime:
+- Lightcone generation (4 x A100 GPU): about 2 days
+- MCMC Rcusp-phi statistics: about 3 weeks
+
 ## 1. Download SIE + external shear mock data
 
 Same as the demo.
+
+---
 
 ## 2. Generate multipole mock catalog
 
@@ -177,11 +211,15 @@ Same as the demo.
 python Run_Full_Simulation/generate_multipule_mock_catalog.py
 ```
 
+---
+
 ## 3. Lightcone simulation
 
 ```sh
 bash Run_Full_Simulation/run_lightcone.sh
 ```
+
+---
 
 ## 4. MCMC for each phi bin
 
@@ -189,32 +227,12 @@ bash Run_Full_Simulation/run_lightcone.sh
 bash Run_Full_Simulation/run_MCMC_each_phi.sh
 ```
 
-## Expected runtime (full simulation)
-
-- Lightcone generation (4 x A100 GPU): about 2 days
-- MCMC Rcusp-phi statistics: about 3 weeks
-
 ---
 
-# Using your own data
+## Using your own data
 
-1. Prepare a FITS catalog with the same structure as:
-   Data/cusp_all_observable.fits
-
-2. Run the simulation pipeline:
-
-```sh
-python Run_Simulation/Mock_sim.py \
-  --fits /path/to/your_catalog.fits \
-  --start-idx 0 \
-  --count 100 \
-  --mode lightcone
-```
-
-3. For MCMC across phi bins, use:
-   --mode mcmc_each_phi
-
----
+Prepare a FITS catalog with the same structure as Data/cusp_all_observable.fits,
+then follow the simulation workflow above.
 
 # Reproducibility
 
@@ -237,7 +255,7 @@ https://doi.org/10.48550/arXiv.2601.16818
 
 ---
 
-# License
+# License and code release
 
 MIT License (see LICENSE).
 
