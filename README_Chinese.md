@@ -26,6 +26,29 @@
 DOI:
 https://doi.org/10.5281/zenodo.18368466
 
+该数据集包含用于尖点构型强透镜类星体 flux-ratio 异常统计分析的模拟数据。
+数据刻画不同暗物质模型下 Rcusp 统计量随开角 phi 的变化，并作为
+arXiv:2601.16818 中贝叶斯分析的理论数据基础。
+
+文件说明（下载后请放到新创建的 Data/ 文件夹中）：
+
+- merged_by_axis_type.pkl
+  基于 SIE + 外剪切宏模型的模拟数据，包含 Smooth、CDM、SIDM、FDM 的
+  mock cusp lenses，并按 cusp 轴类型（长轴/短轴）分组。
+- merged_by_axis_type_mul.pkl
+  在 merged_by_axis_type.pkl 基础上加入 m=3,4 的高阶多极扰动。
+- lensed_qso_mock.fits
+  基础 mock 透镜 catalog（SIE + 外剪切），用于生成多极版本并挑选 cusp 系统。
+- lensed_qso_mock_multipole.fits
+  加入高阶多极扰动的 mock catalog，包含每个系统的合并透镜预测结果。
+- cusp_all_observable.fits
+  从 lensed_qso_mock.fits 中按可观测性切选得到的可观测 cusp 子样本。
+- cusp_all_observable_multipole.fits
+  从 lensed_qso_mock_multipole.fits 中切选得到的可观测 cusp 子样本。
+- OneSystem.tar.gz
+  单个 mock 透镜系统的示例输出打包（lightcone、Rcusp-phi 数据与 MCMC 链），
+  便于快速检查或调试。
+
 本文使用的观测数据（包括汇总的 cusp 构型引力透镜类星体 flux-ratio 数据）可以在以下链接获取：
 
 Notion 数据库：
@@ -271,4 +294,3 @@ pyHalo: 用于子结构和视线 halo 建模：https://github.com/dangilman/pyHa
 
 多极钜相关参考工作：M. S. H. Oh, A. Nierenberg, D. Gilman, S. Birrer
 Joint Semi-Analytic Multipole Priors from Galaxy Isophotes and Their Constraints from Lensed Arcs
-

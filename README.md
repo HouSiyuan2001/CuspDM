@@ -28,6 +28,36 @@ The complete simulated data products are publicly available on Zenodo:
 DOI:
 https://doi.org/10.5281/zenodo.18368466
 
+This dataset contains simulated data used for the statistical analysis of
+flux-ratio anomalies in cusp-configured strongly lensed quasars. The data
+characterize the dependence of the Rcusp statistic on the opening angle phi
+for different dark matter scenarios, and provide the theoretical data basis
+for the Bayesian inference analysis in arXiv:2601.16818.
+
+File description (place the downloaded files into the new Data/ folder):
+
+- merged_by_axis_type.pkl
+  Simulated dataset based on the SIE plus external shear macromodel, including
+  Smooth, CDM, SIDM, and FDM realizations of mock cusp lenses, grouped by cusp
+  axis type (major-axis vs. minor-axis).
+- merged_by_axis_type_mul.pkl
+  Extended dataset constructed from merged_by_axis_type.pkl by incorporating
+  higher-order multipole perturbations with m=3,4.
+- lensed_qso_mock.fits
+  Base mock lens catalog (SIE + external shear) used as the starting point for
+  generating multipole-perturbed realizations and selecting cusp systems.
+- lensed_qso_mock_multipole.fits
+  Mock lens catalog with higher-order multipole perturbations added to the
+  macromodel; contains merged lensing predictions for each simulated system.
+- cusp_all_observable.fits
+  Observable cusp-configured subset selected from lensed_qso_mock.fits after
+  applying the observability cuts used throughout the analysis.
+- cusp_all_observable_multipole.fits
+  Observable cusp-configured subset selected from lensed_qso_mock_multipole.fits.
+- OneSystem.tar.gz
+  Example per-system output archive (lightcone, Rcusp-phi data, and MCMC chains)
+  for a single mock lens system, useful for quick inspection or debugging.
+
 The observational data used in this work (compiled cusp-quasar flux ratios) are available at:
 
 Notion database:
